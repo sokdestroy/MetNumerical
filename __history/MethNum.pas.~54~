@@ -171,10 +171,10 @@ procedure printCelCoords(coords: EclipticCoords; var fileName: text); overload;
 {+Вывод на экран небесных координат (конкретно, экваториальных)}
 procedure printCelCoords(coords: EquatorCoords); overload;
 
-{+Вывод на экран небесных координат (конкретно, горизонтальных)}
+{Вывод на экран небесных координат (конкретно, горизонтальных)}
 procedure printCelCoords(coords: HorizontalCoords); overload;
 
-{+Вывод на экран небесных координат (конкретно, эклиптических)}
+{Вывод на экран небесных координат (конкретно, эклиптических)}
 procedure printCelCoords(coords: EclipticCoords); overload;
 
 

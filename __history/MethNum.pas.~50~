@@ -159,22 +159,22 @@ procedure printElements(elem: ElementsOfOrbit; var fileName: text); overload;
 {+Выводит на экран элементы орбиты}
 procedure printElements(elem: ElementsOfOrbit); overload;
 
-{+Вывод в файл небесных координат (конкретно, экваториальных)}
+{Вывод в файл небесных координат (конкретно, экваториальных)}
 procedure printCelCoords(coords: EquatorCoords; var fileName: text); overload;
 
-{+Вывод в файл небесных координат (конкретно, горизонтальных)}
+{Вывод в файл небесных координат (конкретно, горизонтальных)}
 procedure printCelCoords(coords: HorizontalCoords; var fileName: text); overload;
 
-{+Вывод в файл небесных координат (конкретно, эклиптических)}
+{Вывод в файл небесных координат (конкретно, эклиптических)}
 procedure printCelCoords(coords: EclipticCoords; var fileName: text); overload;
 
-{+Вывод на экран небесных координат (конкретно, экваториальных)}
+{Вывод на экран небесных координат (конкретно, экваториальных)}
 procedure printCelCoords(coords: EquatorCoords); overload;
 
-{+Вывод на экран небесных координат (конкретно, горизонтальных)}
+{Вывод на экран небесных координат (конкретно, горизонтальных)}
 procedure printCelCoords(coords: HorizontalCoords); overload;
 
-{+Вывод на экран небесных координат (конкретно, эклиптических)}
+{Вывод на экран небесных координат (конкретно, эклиптических)}
 procedure printCelCoords(coords: EclipticCoords); overload;
 
 
@@ -649,33 +649,9 @@ begin
 end;
 
 
-procedure printCelCoords(coords: HorizontalCoords; var fileName: text); overload;
-begin
-  Writeln(fileName,coords.Az,' ',coords.h);
-end;
-
-
-procedure printCelCoords(coords: EclipticCoords; var fileName: text); overload;
-begin
-  Writeln(fileName,coords.lamda,' ',coords.betta);
-end;
-
-
 procedure printCelCoords(coords: EquatorCoords); overload;
 begin
   Writeln(coords.alpha,' ',coords.delta);
-end;
-
-
-procedure printCelCoords(coords: HorizontalCoords); overload;
-begin
-  Writeln(coords.Az,' ',coords.h);
-end;
-
-
-procedure printCelCoords(coords: EclipticCoords); overload;
-begin
-  Writeln(coords.lamda,' ',coords.betta);
 end;
 {=============================================================================}
 end.
