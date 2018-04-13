@@ -30,9 +30,6 @@ const
 
   MU = 2.9591220828559110225E-4;
 
-  {Количество градусов в одном часе}
-  DEG_IN_HOUR = 15;
-
 type
   {Элементы орбиты метеороида: a,e,i,Om,w,v}
   ElementsOfOrbit = record
@@ -303,10 +300,10 @@ function toAu(x: extended): extended;
 {+Перевод астрономических единиц в километры}
 function toKm(x: extended): extended;
 
-{+Перевод градусов в часы}
+{Перевод градусов в часы}
 function toHour(x: extended): extended;
 
-{+Перевод часов в градусы}
+{Перевод часов в градусы}
 function toDegFromHour(x: extended): extended;
 
 {=====================================================================
@@ -1135,12 +1132,6 @@ end;
 
 function toHour(x: extended): extended;
 begin
-  result := x/DEG_IN_HOUR;
-end;
 
-
-function toDegFromHour(x: extended): extended;
-begin
-  result := x*DEG_IN_HOUR;
 end;
 end.

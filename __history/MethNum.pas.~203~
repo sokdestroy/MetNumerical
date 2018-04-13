@@ -303,10 +303,10 @@ function toAu(x: extended): extended;
 {+Перевод астрономических единиц в километры}
 function toKm(x: extended): extended;
 
-{+Перевод градусов в часы}
+{Перевод градусов в часы}
 function toHour(x: extended): extended;
 
-{+Перевод часов в градусы}
+{Перевод часов в градусы}
 function toDegFromHour(x: extended): extended;
 
 {=====================================================================

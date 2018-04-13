@@ -303,10 +303,10 @@ function toAu(x: extended): extended;
 {+Перевод астрономических единиц в километры}
 function toKm(x: extended): extended;
 
-{+Перевод градусов в часы}
+{Перевод градусов в часы}
 function toHour(x: extended): extended;
 
-{+Перевод часов в градусы}
+{Перевод часов в градусы}
 function toDegFromHour(x: extended): extended;
 
 {=====================================================================
@@ -1135,12 +1135,12 @@ end;
 
 function toHour(x: extended): extended;
 begin
-  result := x/DEG_IN_HOUR;
+  result := x/15;
 end;
 
 
 function toDegFromHour(x: extended): extended;
 begin
-  result := x*DEG_IN_HOUR;
+
 end;
 end.
