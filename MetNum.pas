@@ -1,0 +1,1276 @@
+unit MetNum;
+
+interface
+
+uses
+  Math;
+
+const
+  {Скорость вращения Земли (рад/с)}
+  EARTH_ROT_SPEED = 2*PI/86400;
+
+  {Радиус земли в км}
+  EARTH_RAD = 6371;
+
+  {Стандартная эпоха (юлианские дни)}
+  STANDRD_ERA = 2451545.0;
+
+  {Маленькое число, для точности численных методов}
+  EPS = 10E-12;
+
+  {Кол-во километров в 1 а.е.}
+  AU_KM = 1.49597870691E+8;
+
+  {Константа для перевода градусов в радианы и обратно}
+  RAD = PI/180.0;
+
+  {Наклон эклиптики к экватору (радианы)}
+  ECL_EQ = 84381.412/3600*rad;
+
+
+  MU = 2.9591220828559110225E-4;
+
+  {Количество градусов в одном часе}
+  DEG_IN_HOUR = 15;
+
+type
+  {Элементы орбиты метеороида: a,e,i,Om,w,v}
+  ElementsOfOrbit = record
+    a,e,i,Om,w,v: extended;
+  end;
+
+  {Декартовы координаты и скорости метеороида: X,Y,Z,Vx,Vy,Vz}
+  DecartCoords = record
+    X,Y,Z,Vx,Vy,Vz: extended;
+  end;
+
+
+  {Комбинированный тип данных для даты и времени}
+  DateTime = record
+    day,month,year,hour,minute: integer;
+    second: extended;
+  end;
+
+  {Экваториальные координаты (прямое восхождение, склонение)}
+  EquatorCoords = record
+    alpha,delta: extended;
+  end;
+
+  {Горизонтальные координаты (азимут, высота над горизонтом)}
+  HorizontalCoords = record
+    Az,h: extended;
+  end;
+
+  {Эклиптические координаты (долгота и широта)}
+  EclipticCoords = record
+    lamda,betta: extended;
+  end;
+
+  {Географические координаты (долгота и широта)}
+  GeogrCoords = record
+    long,lat: extended;
+  end;
+
+
+{========================================================
+Блок процедур и функций для инициализации и ввода.
+
+Для автоматизации этой процедуры было придумано специальные
+расширения .emet и .cmet, файлы которого являются специфицированным
+текстом, то есть, данные идущие в определенном порядке для
+облегчения процедуры ввода.
+
+.emet хранит в себе элементы орбиты метеора в первой строке
+в следующем порядке: a,e,i,Om,w,v.
+.cmet хранит в себе координаты и скорости в первой строке в
+следующем порядке: X,Y,Z,Vx,Vy,Vz.
+Во второй строке обоих файлов хранится дата наблюдения в
+формате dd mm yy hh mm ss.
+В третей строке обоих файлов хранятся экваториальные координаты
+наблюдаемого метеора в следующем порядке: alpha delta.
+В зависимости от того, какой информацией о метеоре обладает
+пользователь, будет выбираться функция для ввода.
+
+Обе функции (для вариантов с координатами или элементами орбиты)
+перегружены трижды. Соответственно, из файла может быть считана
+лишь первая строка, первые две или все три.
+=========================================================}
+
+{+Ввод декартовых координат метеора, времени наблюдения и экваториальных координат
+Test: +}
+procedure inputCMet(filename: String; var met: DecartCoords; time: DateTime;
+          var eqCords: EquatorCoords); overload;
+
+
+{+Ввод декартовых координат метеора и времени наблюдения
+Test: +}
+procedure inputCMet(filename: String; var met: DecartCoords; var time: DateTime); overload;
+
+{+Ввод декартовых координат метеора
+Test: +}
+procedure inputCMet(filename: String; var met: DecartCoords); overload;
+
+{+Ввод элементов орбиты метеора, времени наблюдения и экваториальных координат}
+procedure inputEMet(filename: String; var met: ElementsOfOrbit; var time: DateTime;
+          var eqCords: EquatorCoords); overload;
+
+{+Ввод элементов орбиты метеора и времени его наблюдения}
+procedure inputEMet(filename: String; var met: ElementsOfOrbit; var time: DateTime); overload;
+
+{+Ввод только элементов орбиты  метеора}
+procedure inputEMet(filename: String; var met: ElementsOfOrbit); overload;
+
+{+Инициализация даты и времени для дальнейшего использования в
+программе}
+function initDateTime(day,month,year,hour,minute: integer; second: extended): DateTime;
+
+{+Инициализация элементов орбиты метеора}
+function initElems(a,e,i,Om,w,v: extended): ElementsOfOrbit;
+
+{+Инициализация декартовых координат метеора}
+function initDecartCoords(X,Y,Z,Vx,Vy,Vz: extended): DecartCoords;
+
+{+Инициализация экваториальных координат}
+function initEquatorCoords(alpha,delta: extended): EquatorCoords;
+
+{+Инициализация эклиптических координат}
+function initEclipticCoords(lamda,betta: extended): EclipticCoords;
+
+{+Инициализация горизонтальных координат}
+function initHorizontalCoords(Az,h: extended): HorizontalCoords;
+
+{+Инициализация георграфических координат}
+function initGeogrCoords(long,lat: extended): GeogrCoords;
+
+{Вывод времени в файл
+Test: +}
+procedure printDateTime(t: DateTime; var fileName: text); overload;
+
+{Вывод времени на экран
+Test: +}
+procedure printDateTime(t: DateTime); overload;
+
+{+Вывод коордианат в файл
+Test: +}
+procedure printCoords(coords: DecartCoords; var fileName: text); overload;
+
+{+Вывод координат на экран
+Test: +}
+procedure printCoords(coords: DecartCoords); overload;
+
+{+Вывод скоростей в файл
+Test: +}
+procedure printVel(coords: DecartCoords; var fileName: text); overload;
+
+{+Вывод скоростей на экран
+Test: +}
+procedure printVel(coords: DecartCoords); overload;
+
+{+Вывод коордианат и скоростей в файл
+Test: +}
+procedure printCoordsVel(coords: DecartCoords; var fileName: text); overload;
+
+{+Вывод координат и скоростей на экран
+Test: +}
+procedure printCoordsVel(coords: DecartCoords); overload;
+
+{+Выводит в файл элементы орбиты}
+procedure printElements(elem: ElementsOfOrbit; var fileName: text); overload;
+
+{+Выводит на экран элементы орбиты}
+procedure printElements(elem: ElementsOfOrbit); overload;
+
+{+Вывод в файл небесных координат (конкретно, экваториальных)
+Test: +}
+procedure printCelCoords(coords: EquatorCoords; var fileName: text); overload;
+
+{+Вывод в файл небесных координат (конкретно, горизонтальных)}
+procedure printCelCoords(coords: HorizontalCoords; var fileName: text); overload;
+
+{+Вывод в файл небесных координат (конкретно, эклиптических)}
+procedure printCelCoords(coords: EclipticCoords; var fileName: text); overload;
+
+{+Вывод на экран небесных координат (конкретно, экваториальных)
+Test: +}
+procedure printCelCoords(coords: EquatorCoords); overload;
+
+{+Вывод на экран небесных координат (конкретно, горизонтальных)}
+procedure printCelCoords(coords: HorizontalCoords); overload;
+
+{+Вывод на экран небесных координат (конкретно, эклиптических)}
+procedure printCelCoords(coords: EclipticCoords); overload;
+
+
+{================================================================
+           Конец блока процедур инициализацции и ввода
+=================================================================}
+
+
+{=================================================================
+Блок астрономических процедур и функций, связанных с переходами от одной СК
+к другой, переходами от элементов орбиты к декартовым координатам и обратно,
+процедурами, связанными с временем.
+==================================================================}
+
+{+Функция перехода от элементов орбиты к декартовым координатам}
+function fromOrbitToDecart(elems: ElementsOfOrbit): DecartCoords;
+
+{+Функция перехода от декартовых координат к элементам орбиты}
+function fromDecartToOrbit(coord: DecartCoords): ElementsOfOrbit;
+
+{+Перевод григорианской даты к юлианской}
+function JDate(dt: DateTime): extended;
+
+{+Звездное время на полночь введенной даты}
+function siderealTime(year,month,day: integer): extended;
+
+{+Решает уравнение Кеплера методом Ньютона}
+function keplerSolution(e,M: extended): extended;
+
+{+Возвращает уравнение Кеплера}
+function keplerEq(x,e,M: extended): extended;
+
+{+Возвращает производную уравнения Кеплера}
+function keplerDifEq(x,e: extended): extended;
+
+{+Получаем среднюю аномалию}
+function getM(t,t0,M0,a: extended): extended;
+
+{+Получаем среднее движение}
+function getN(a: extended): extended;
+
+{+Перевод юлианской даты к григорианской}
+function grDate(JD: extended): DateTime;
+
+{+Звездное время на даную дату на данной долготе}
+function sidTimeOnLong(date: DateTime; long: extended): extended;
+
+{+Переход от экваториальных координат к эклиптическим (случай сферы)}
+function fromEqToEcl(eq: EquatorCoords): EclipticCoords;
+
+{+Переход от эклиптических координат к экваториальным (случай сферы)}
+function fromEclToEq(ecl: EclipticCoords): EquatorCoords;
+
+{+Переход от горизонтальных координат к экваториальным (случай сферы)}
+function fromHorToEq(hor: HorizontalCoords; fi,sidTime: extended): EquatorCoords;
+
+{+Переход от экваториальных координат к горизонтальным (случай сферы)}
+function fromEqToHor(eq: EquatorCoords; fi,sidTime: extended): HorizontalCoords;
+
+{+Переход от экваториальных координат к эклиптичекским (декартов случай)}
+function fromEqToEclDecart(eq: DecartCoords): DecartCoords;
+
+{+Переход от эклиптических координат к экваториальным (декартов случай)}
+function fromEclToEqDecart(ecl: DecartCoords): DecartCoords;
+
+{+Возвращает радиант метеора}
+function getRadiant(met: DecartCoords): EquatorCoords;
+
+{Рассчет элементов орбиты по методу, предложеному Дубяго}
+function numElemsWithDubyago(alpha,delta,Vel: extended; Earth: DecartCoords): ElementsOfOrbit;
+
+
+{=====================================================================
+            Конец блока астрономических процедур и функций
+======================================================================}
+
+
+{=====================================================================
+Блок математических процедур и функций. Вращение систем координат,
+модули векторов, перевод одних единиц в другие.
+======================================================================}
+
+{+Поворот системы координат вокруг оси Х на угол angle (в радианах)}
+function rotateSCX(angle: extended; dc: DecartCoords): DecartCoords;
+
+{+Поворот системы координат вокруг оси Y на угол angle (в радианах)}
+function rotateSCY(angle: extended; dc: DecartCoords): DecartCoords;
+
+{+Поворот системы координат вокруг оси Z на угол angle (в радианах)}
+function rotateSCZ(angle: extended; dc: DecartCoords): DecartCoords;
+
+{+Переход от декартовых координат к сферическим}
+procedure fromDecartToSphere(A: DecartCoords; var fi,lam: extended);
+
+{+Переход от сферы к декартовым координатам}
+function fromSphereToDecart(fi,lam,r: extended): DecartCoords;
+
+{+Сумма двух векторов (и координат, и скоростей)}
+function sumOfVectors(A,B: DecartCoords): DecartCoords;
+
+{+Разность двух векторов (и координат, и скоростей)}
+function differenceOfVectors(A,B: DecartCoords): DecartCoords;
+
+{+Модуль вектора положения (части, отвечающей за координаты)}
+function moduleOfCoords(A: DecartCoords): extended;
+
+{+Модуль вектора скорости (части, отвечающей за скорость)}
+function moduleOfVelocity(A: DecartCoords): extended;
+
+{+Переход к представлению времени в виде десятичной дроби (в часах)}
+function timeToDotTime(t: DateTime): extended;
+
+{+Переход к дискретному представлению времени (часы, минуты, секунды) от
+вида двесятичной дроби (поля отвечающие за дату равны НУЛЮ)}
+function dotTimeToTime(t: extended): DateTime;
+
+{+Перевод градусов в радианы}
+function toRadians(x: extended): extended;
+
+{+Перевод радиан в градусы}
+function toDegree(x: extended): extended;
+
+{+Перевод километров в астрономические единицы}
+function toAu(x: extended): extended;
+
+{+Перевод астрономических единиц в километры}
+function toKm(x: extended): extended;
+
+{+Перевод градусов в часы}
+function toHour(x: extended): extended;
+
+{+Перевод часов в градусы}
+function toDegFromHour(x: extended): extended;
+
+{Перевод угла к интервалу [0,2*PI]}
+function toTwoPiInterval(angle: extended): extended;
+
+{=====================================================================
+            Конец блока математических процедур и функций
+======================================================================}
+
+
+{=====================================================================
+   Блок процедур и функций, работающих со внешними данными.
+   Здесь работа с фондами больших планет. По надобности и использованию
+   сторонних библиотек будет дополняться.
+======================================================================}
+
+{Получаем координаты Земли из 430 фонда больших планет}
+function getEarthCoords(): DecartCoords;
+
+{=====================================================================
+    Конец блока процедур и функций, работающих со внешними данными
+======================================================================}
+
+implementation
+
+{=============================================================================}
+
+procedure inputCMet(filename: String; var met: DecartCoords; time: DateTime;
+          var eqCords: EquatorCoords); overload;
+var infile: text;
+begin
+  try
+    Assign(infile,filename);
+    Reset(infile);
+  except
+    Writeln('Файл не найден. Проверьте правильность пути.');
+    Readln;
+    Halt;
+  end;
+
+  try
+    Readln(infile,met.X,met.Y,met.Z,met.Vx,met.Vy,met.Vz);
+  except
+    Writeln('Невозможно считать координаты. Проверьте конфигурацию файла.');
+    Readln;
+    Halt;
+  end;
+
+  try
+    Readln(infile,time.day,time.month,time.year,time.hour,time.minute,time.second);
+  except
+    Writeln('Невозможно считать дату. Проверьте конфигурацию файла.');
+    Readln;
+    Halt;
+  end;
+
+  try
+    Readln(infile,eqCords.alpha,eqCords.delta);
+  except
+    Writeln('Невозможно считать экваториальные координаты. Проверьте конфигурацию файла.');
+    Readln;
+    Halt;
+  end;
+
+  Close(infile);
+end;
+
+procedure inputCMet(filename: String; var met: DecartCoords; var time: DateTime); overload;
+var infile: text;
+begin
+  try
+    Assign(infile,filename);
+    Reset(infile);
+  except
+    Writeln('Файл не найден. Проверьте правильность пути.');
+    Readln;
+    Halt;
+  end;
+
+  try
+    Readln(infile,met.X,met.Y,met.Z,met.Vx,met.Vy,met.Vz);
+  except
+    Writeln('Невозможно считать координаты. Проверьте конфигурацию файла.');
+    Readln;
+    Halt;
+  end;
+
+  try
+    Readln(infile,time.day,time.month,time.year,time.hour,time.minute,time.second);
+  except
+    Writeln('Невозможно считать дату. Проверьте конфигурацию файла.');
+    Readln;
+    Halt;
+  end;
+
+  Close(infile);
+end;
+
+procedure inputCMet(filename: String; var met: DecartCoords); overload;
+var infile: text;
+begin
+  try
+    Assign(infile,filename);
+    Reset(infile);
+  except
+    Writeln('Файл не найден. Проверьте правильность пути.');
+    Readln;
+    Halt;
+  end;
+
+  try
+    Readln(infile,met.X,met.Y,met.Z,met.Vx,met.Vy,met.Vz);
+  except
+    Writeln('Невозможно считать координаты. Проверьте конфигурацию файла.');
+    Readln;
+    Halt;
+  end;
+
+  Close(infile);
+end;
+
+
+procedure inputEMet(filename: String; var met: ElementsOfOrbit; var time: DateTime;
+         var eqCords: EquatorCoords); overload;
+var infile: text;
+begin
+  try
+    Assign(infile,filename);
+    Reset(infile);
+  except
+    Writeln('Файл не найден. Проверьте правильность пути.');
+    Readln;
+    Halt;
+  end;
+
+  try
+    Readln(infile,met.a,met.e,met.i,met.Om,met.w,met.v);
+  except
+    Writeln('Невозможно считать координаты. Проверьте конфигурацию файла.');
+    Readln;
+    Halt;
+  end;
+
+  try
+    Readln(infile,time.day,time.month,time.year,time.hour,time.minute,time.second);
+  except
+    Writeln('Невозможно считать дату. Проверьте конфигурацию файла.');
+    Readln;
+    Halt;
+  end;
+
+  try
+    Readln(infile,eqCords.alpha,eqCords.delta);
+  except
+    Writeln('Невозможно считать экваториальные координаты. Проверьте конфигурацию файла.');
+    Readln;
+    Halt;
+  end;
+
+  Close(infile);
+end;
+
+
+procedure inputEMet(filename: String; var met: ElementsOfOrbit; var time: DateTime); overload;
+var infile: text;
+begin
+  try
+    Assign(infile,filename);
+    Reset(infile);
+  except
+    Writeln('Файл не найден. Проверьте правильность пути.');
+    Readln;
+    Halt;
+  end;
+
+  try
+    Readln(infile,met.a,met.e,met.i,met.Om,met.w,met.v);
+  except
+    Writeln('Невозможно считать координаты. Проверьте конфигурацию файла.');
+    Readln;
+    Halt;
+  end;
+
+  try
+    Readln(infile,time.day,time.month,time.year,time.hour,time.minute,time.second);
+  except
+    Writeln('Невозможно считать дату. Проверьте конфигурацию файла.');
+    Readln;
+    Halt;
+  end;
+
+  Close(infile);
+end;
+
+
+procedure inputEMet(filename: String; var met: ElementsOfOrbit); overload;
+var infile: text;
+begin
+  try
+    Assign(infile,filename);
+    Reset(infile);
+  except
+    Writeln('Файл не найден. Проверьте правильность пути.');
+    Readln;
+    Halt;
+  end;
+
+  try
+    Readln(infile,met.a,met.e,met.i,met.Om,met.w,met.v);
+  except
+    Writeln('Невозможно считать координаты. Проверьте конфигурацию файла.');
+    Readln;
+    Halt;
+  end;
+
+  Close(infile);
+end;
+
+
+function initDateTime(day,month,year,hour,minute: integer; second: extended): DateTime;
+var t: DateTime;
+begin
+  t.day := day;
+  t.month := month;
+  t.year := year;
+  t.hour := hour;
+  t.minute := minute;
+  t.second := second;
+
+  result := t;
+end;
+
+
+function initElems(a,e,i,Om,w,v: extended): ElementsOfOrbit;
+var el: ElementsOfOrbit;
+begin
+  el.a := a;
+  el.e := e;
+  el.i := i;
+  el.Om := Om;
+  el.a := w;
+  el.a := v;
+
+  result := el;
+end;
+
+
+function initDecartCoords(X,Y,Z,Vx,Vy,Vz: extended): DecartCoords;
+var coord: DecartCoords;
+begin
+  coord.X := X;
+  coord.Y := Y;
+  coord.Z := Z;
+  coord.Vx := Vx;
+  coord.Vy := Vy;
+  coord.Vz := Vz;
+
+  result := coord;
+end;
+
+
+function initEquatorCoords(alpha,delta: extended): EquatorCoords;
+var coor: EquatorCoords;
+begin
+  coor.alpha := alpha;
+  coor.delta := delta;
+
+  result := coor;
+end;
+
+
+function initEclipticCoords(lamda,betta: extended): EclipticCoords;
+var coor: EclipticCoords;
+begin
+  coor.lamda := lamda;
+  coor.betta := betta;
+
+  result := coor;
+end;
+
+
+function initHorizontalCoords(Az,h: extended): HorizontalCoords;
+var coor: HorizontalCoords;
+begin
+  coor.Az := Az;
+  coor.h := h;
+
+  result := coor;
+end;
+
+
+function initGeogrCoords(long,lat: extended): GeogrCoords;
+var coor: GeogrCoords;
+begin
+  coor.long := long;
+  coor.lat := lat;
+
+  result := coor;
+end;
+
+
+procedure printDateTime(t: DateTime; var fileName: text);  overload;
+begin
+  with t do begin
+    Writeln(fileName, day,'.',month,'.',year,', ',hour,':',minute,':',second:7:3);
+  end;
+end;
+
+
+procedure printDateTime(t: DateTime); overload;
+begin
+  with t do begin
+    Writeln(day,'.',month,'.',year,' ',hour,':',minute,':',second:7:3);
+  end;
+end;
+
+
+procedure printCoords(coords: DecartCoords; var fileName: text); overload;
+begin
+  Writeln(fileName,coords.X,' ',coords.Y,' ',coords.Z);
+end;
+
+
+procedure printCoords(coords: DecartCoords); overload;
+begin
+  Writeln(coords.X,' ',coords.Y,' ',coords.Z);
+end;
+
+
+procedure printVel(coords: DecartCoords; var fileName: text); overload;
+begin
+  Writeln(fileName,coords.Vx,' ',coords.Vy,' ',coords.Vz);
+end;
+
+
+procedure printVel(coords: DecartCoords); overload;
+begin
+  Writeln(coords.Vx,' ',coords.Vy,' ',coords.Vz);
+end;
+
+
+procedure printCoordsVel(coords: DecartCoords; var fileName: text); overload;
+begin
+  Writeln(fileName, coords.X,' ',coords.Y,' ',coords.Z,' ',coords.Vx,' ',
+          coords.Vy,' ',coords.Vz);
+end;
+
+
+procedure printCoordsVel(coords: DecartCoords); overload;
+begin
+  Writeln(coords.X,' ',coords.Y,' ',coords.Z,' ',coords.Vx,' ',coords.Vy,
+          ' ',coords.Vz);
+end;
+
+
+procedure printElements(elem: ElementsOfOrbit; var fileName: text); overload;
+begin
+  with elem do begin
+    Writeln(fileName,a,' ',e,' ',i,' ',Om,' ',w,' ',v);
+  end;
+end;
+
+
+procedure printElements(elem: ElementsOfOrbit); overload;
+begin
+  with elem do begin
+    Writeln(a,' ',e,' ',i,' ',Om,' ',w,' ',v);
+  end;
+end;
+
+
+procedure printCelCoords(coords: EquatorCoords; var fileName: text); overload;
+begin
+  Writeln(fileName,coords.alpha,' ',coords.delta);
+end;
+
+
+procedure printCelCoords(coords: HorizontalCoords; var fileName: text); overload;
+begin
+  Writeln(fileName,coords.Az,' ',coords.h);
+end;
+
+
+procedure printCelCoords(coords: EclipticCoords; var fileName: text); overload;
+begin
+  Writeln(fileName,coords.lamda,' ',coords.betta);
+end;
+
+
+procedure printCelCoords(coords: EquatorCoords); overload;
+begin
+  Writeln(coords.alpha,' ',coords.delta);
+end;
+
+
+procedure printCelCoords(coords: HorizontalCoords); overload;
+begin
+  Writeln(coords.Az,' ',coords.h);
+end;
+
+
+procedure printCelCoords(coords: EclipticCoords); overload;
+begin
+  Writeln(coords.lamda,' ',coords.betta);
+end;
+{=============================================================================}
+
+
+function fromOrbitToDecart(elems: ElementsOfOrbit): DecartCoords;
+var
+   ra,u,p:extended;
+   Vr,Vn:extended;
+   si_i,co_i,si_u,co_u,si_Om,co_Om:extended;
+   one_pl,d_b_ra,sq_mu_div_p:extended;
+   coords: DecartCoords;
+
+begin
+  {Вспомогательные вычисления для ускорения работы}
+  with elems do begin
+  p := a*(1 - sqr(e));
+  one_pl := (1 + e*cos(v));
+  ra := p/one_pl;
+  u := v + w;
+  co_u := cos(u);
+  si_u := sin(u);
+  si_Om := sin(Om);
+  co_Om := cos(Om);
+  si_i := sin(i);
+  co_i := cos(i);
+  d_b_ra := 1/ra;
+  sq_mu_div_p:= sqrt(mu/p);
+
+
+   {Вычисление гелиоцентрических координат}
+  coords.X := ra*(co_u*co_Om - si_u*si_Om*co_i);
+  coords.Y := ra*(co_u*si_Om + si_u*co_Om*co_i);
+  coords.Z := ra*si_u*si_i;
+  Vr := sq_mu_div_p*e*sin(v);
+  Vn := sq_mu_div_p*one_pl;
+  coords.Vx := coords.X*d_b_ra*Vr + (-si_u*co_Om - co_u*si_Om*co_i)*Vn;
+  coords.Vy := coords.Y*d_b_ra*Vr + (-si_u*si_Om + co_u*co_Om*co_i)*Vn;
+  coords.Vz := coords.Z*d_b_ra*Vr + co_u*si_i*Vn;
+  end;
+
+  result := coords;
+ end;{fromOrbitToDecart}
+
+
+function fromDecartToOrbit(coord: DecartCoords): ElementsOfOrbit;
+var
+   RV,mup,smup,p,u,R,Vel:extended;
+   si_i,co_i,si_Om,co_om,si_v,co_v,si_u,co_u:extended;
+   d_b_mup,d_b_smup,d_b_re,d_b_r,d_b_smup_a_si_i:extended;
+   elems: ElementsOfOrbit;
+
+begin
+   {Блок вспомогательных для расчетов переменных. !d_b_ - divide by!}
+   RV := coord.X*coord.Vx + coord.Y*coord.Vy + coord.Z*coord.Vz;
+   R := sqrt(sqr(coord.X) + sqr(coord.Y) + sqr(coord.Z));
+   Vel := moduleOfVelocity(coord);
+   elems.a := 1/((2/R)-(sqr(Vel)/mu));
+   mup := sqr(R)*sqr(Vel) - sqr(RV);
+   elems.e := sqrt(1 - (mup)/(mu*elems.a));
+   p := elems.a*(1 - sqr(elems.e));
+   smup := sqrt(mu);
+   d_b_mup := 1/mup;
+   d_b_smup := 1/sqrt(mup);
+   d_b_re := 1/(R*elems.e);
+   d_b_r := 1/R;
+
+   {Синусы и косинусы для расчета углов}
+   co_i := (coord.X*coord.Vy-coord.Y*coord.Vx)/sqrt(mup);
+   si_i := sqrt((sqr(coord.Y*coord.Vz - coord.Z*coord.Vy) +
+                 sqr(coord.X*coord.Vz - coord.Z*coord.Vx))/mup);
+
+   d_b_smup_a_si_i := d_b_smup/si_i;  {Вспомогашка}
+
+   si_Om := (coord.Y*coord.Vz - coord.Z*coord.Vy)*d_b_smup_a_si_i;
+   co_Om := (coord.X*coord.Vz - coord.Z*coord.Vx)*d_b_smup_a_si_i;
+   si_v := (sqrt(p)*RV)*d_b_re/smup;
+   co_v := (p - R)*d_b_re;
+   si_u := coord.Z*d_b_r/si_i;
+   co_u := (coord.X*co_Om + coord.Y*si_Om)*d_b_r;
+
+   {Сами углы}
+   elems.i := Arctan2(si_i,co_i);
+   elems.Om := Arctan2(coord.Y*coord.Vz - coord.Z*coord.Vy,coord.X*coord.Vz - coord.Z*coord.Vx);
+   elems.v := Arctan2(si_v,co_v);
+   u := Arctan2(si_u,co_u);
+   elems.w := u - elems.v;
+   if elems.Om < 0 then elems.Om := elems.Om + 2*Pi;
+   if elems.v < 0 then elems.v := elems.v + 2*Pi;
+
+end; {fromDecartToORbit}
+
+
+function JDate(dt: DateTime): extended;
+var JDN,a,y,m,y1,m1,d1: integer;
+begin
+  with dt do begin
+  y1 := trunc(year);
+  m1 := trunc(month);
+  d1 := trunc(day);
+
+  a := (14 - m1) div 12;
+  y := y1 + 4800 - a;
+  m := m1 + 12*a -3;
+
+  JDN := d1 + ((153*m + 2) div 5) + 365*y + (y div 4)- (y div 100) + (y div 400) - 32045;
+  JDate := JDN + (hour - 12)/24 + minute/1440 + second/86400;
+  end;
+end;
+
+
+function siderealTime(year,month,day: integer): extended;
+var teta,Tu,T,JD,sidTime: extended;
+begin
+JD := JDate(initDateTime(day,month,year,0,0,0));
+Tu := JD - STANDRD_ERA;
+T := Tu/36525;
+teta := 360*(0.7790572732640 + 1.00273781191135448*Tu);
+sidTime := teta + (0.014506 + 4612.15739966*T + 1.39667721*sqr(T) +
+0.00009344*sqr(T)*T + 0.00001882*sqr(sqr(T)))/3600;
+
+while sidTime > 360 do
+   sidTime := sidTime - 360;
+
+result := sidTime/15;
+end;
+
+
+function keplerSolution(e,M: extended): extended;
+var x1,x2: extended;
+begin
+  x2 := M;
+  x1 := 0;
+  while (abs(x2-x1) > EPS) do
+    begin
+     x1 := x2;
+     x2 := x1 - keplerEq(x1,e,M)/keplerDifEq(x1,e);
+    end; {while}
+  result := x2;
+end;
+
+
+function keplerEq(x,e,M: extended): extended;
+begin
+  result := x - M - e*sin(x);
+end;
+
+
+function keplerDifEq(x,e: extended): extended;
+begin
+  result := 1 - e*cos(x);
+end;
+
+
+function getM(t,t0,M0,a: extended): extended;
+begin
+ result := M0 + getN(a)*(t - t0);
+end;
+
+
+function getN(a: extended): extended;
+begin
+  result := sqrt(MU/(a*a*a));
+end;
+
+
+function grDate(JD: extended): DateTime;
+var a,b,c,d,e,m,JDN: integer;
+    day1,month1,year1: integer;
+    day,month,year,hour,minute,second: extended;
+    t: DateTime;
+
+begin
+ JDN := trunc(JD);
+ a := JDN + 32044;
+ b := (4*a + 3) div 146097;
+ c := a - (146097*b) div 4;
+ d := (4*c + 3) div 1461;
+ e := c - (1461*d) div 4;
+ m := (5*e + 2) div 153;
+
+ day := e - ((153*m + 2) div 5) + 1;
+ month := m + 3 - 12*(m div 10);
+ year := 100*b + d - 4800 + m div 10;
+
+ hour := (JD - trunc(JD))*24 + 12;
+ minute := (hour - trunc(hour))*60;
+ second := (minute - trunc(minute))*60;
+ hour := trunc(hour);
+ minute := trunc(minute);
+ if second >= 59.999 then begin
+   second := 0;
+   minute := minute + 1;
+ end;
+
+ if minute >= 59.999 then begin
+   minute := 0;
+   hour := hour + 1;
+ end;
+
+ if hour >= 23.999 then begin
+   hour := 0;
+   day := day + 1;
+ end;
+
+ t.day := trunc(day);
+ t.month := trunc(month);
+ t.year := trunc(year);
+
+ t.hour := trunc(hour);
+ t.minute := trunc(minute);
+ t.second := second;
+
+ result := t;
+
+end; //GrDate end
+
+
+function sidTimeOnLong(date: DateTime; long: extended): extended;
+var sidTime,ST,s0: extended;
+begin
+  with date do begin
+  sidTime := siderealTime(year,month,day);
+  s0 := sidTime - long/DEG_IN_HOUR/24*(3/60+56.5554/3600);
+  ST := s0 + 1.002738*(hour + minute/60 + second/3600 + long/DEG_IN_HOUR);
+  Result := ST;
+  end;
+end; //sidTimeOnLong end
+
+
+function fromEqToEcl(eq: EquatorCoords): EclipticCoords;
+var ecl: EclipticCoords;
+begin
+  with eq do begin
+  ecl.betta := arcsin(sin(delta)*cos(ECL_EQ) - cos(delta)*sin(ECL_EQ)*sin(alpha));
+  ecl.lamda := arctan2(sin(delta)*sin(ECL_EQ) + cos(delta)*cos(ECL_EQ)*sin(alpha),
+  cos(delta)*cos(alpha));
+  end;
+  result := ecl;
+ end;
+
+
+function fromEclToEq(ecl: EclipticCoords): EquatorCoords;
+var eq: EquatorCoords;
+begin
+ with ecl do begin
+ eq.delta := arcsin(sin(ECL_EQ)*sin(lamda)*cos(betta) + cos(ECL_EQ)*sin(betta));
+ eq.alpha := arctan2(cos(ECL_EQ)*sin(lamda)*cos(betta) - sin(ECL_EQ)*sin(betta),
+ cos(lamda)*cos(betta));
+ end;
+ result := eq;
+end;
+
+
+function fromHorToEq(hor: HorizontalCoords; fi,sidTime: extended): EquatorCoords;
+var z,t: extended;
+    eq: EquatorCoords;
+begin
+ with hor do begin
+ z := Pi/2 - h;
+ eq.delta := arcsin(sin(fi)*cos(z) - cos(fi)*sin(z)*cos(Az));
+ t := arctan2(sin(z)*sin(Az),cos(fi)*cos(z) + sin(fi)*sin(z)*cos(Az));
+ eq.alpha := sidTime - t;
+ end;
+ result := eq;
+end;
+
+
+function fromEqToHor(eq: EquatorCoords; fi,sidTime: extended): HorizontalCoords;
+var t: extended;
+    hor: HorizontalCoords;
+begin
+ with eq do begin
+ t := sidTime - alpha;
+ hor.Az := arctan2(cos(delta)*sin(t),sin(fi)*cos(delta)*cos(t) - cos(fi)*sin(delta));
+ hor.h := Pi/2 - arccos(sin(fi)*sin(delta) + cos(fi)*cos(delta)*cos(t));
+ end;
+ result := hor;
+end;
+
+
+function fromEqToEclDecart(eq: DecartCoords): DecartCoords;
+begin
+  result := rotateSCX(ECL_EQ,eq);
+end;
+
+
+function fromEclToEqDecart(ecl: DecartCoords): DecartCoords;
+begin
+  result := rotateSCX(-ECL_EQ,ecl);
+end;
+
+
+function getRadiant(met: DecartCoords): EquatorCoords;
+var radiant: EquatorCoords;
+begin
+  radiant.alpha := arctan2(-met.Vy,-met.Vx);
+  radiant.delta := arcsin(-met.Vz/moduleOfVelocity(met));
+
+  result := radiant;
+end;
+
+
+function numElemsWithDubyago(alpha,delta,Vel: extended; Earth: DecartCoords): ElementsOfOrbit;
+var lambda_g,betta_g,lambda_a,Eg,gamma,Vh,Eh: extended;
+    lambda_h,betta_h,R_Earth,p_Meth,lambda_sun: extended;
+    V_Earth: extended;
+    meteor: ElementsOfOrbit;
+begin
+ V_Earth := moduleOfVelocity(Earth);
+ R_Earth := moduleOfCoords(Earth);
+
+ lambda_g := arctan2(sin(eps)*sin(delta) + cos(eps)*cos(delta)*sin(alpha),
+             cos(delta)*cos(alpha));
+ betta_g := arcsin(cos(eps)*sin(delta) - sin(eps)*cos(delta)*sin(alpha));
+ lambda_a := arctan2(Earth.Vy,Earth.Vx);
+ Eg := arccos(cos(betta_g)*cos(lambda_g - lambda_a));
+ gamma := arctan2(tan(betta_g),sin(lambda_g - lambda_a));
+ Vh := sqrt(sqr(Vel) + sqr(V_Earth) - 2*V_Earth*Vel*cos(Eg));
+ Eh := Vel*sin(Eg)/Vh;
+ lambda_h := lambda_a + arctan2(cos(gamma)*sin(Eh),cos(Eh));
+ betta_h := arctan2(sin(Eh)*sin(gamma)*cos(lambda_h - lambda_a),cos(Eh));
+
+
+
+
+ { 1) a }
+ meteor.a := power(2/R_Earth - sqr(Vh)/MU,-1);
+
+ { 2) i }
+ lambda_sun := arctan2(Earth.Y,Earth.X);
+ meteor.i := arctan2(abs(tan(betta_h)),sin(lambda_sun - lambda_h));
+ meteor.i := toTwoPiInterval(meteor.i);
+
+ { 3) e }
+ p_Meth := sqr(R_Earth*Vh)*(1 - sqr(cos(betta_h)*cos(lambda_h - lambda_sun)))/MU;
+ meteor.e := sqrt(1 - p_Meth/meteor.a);
+
+ { 4) Om }
+ if sin(betta_h) > 0 then
+    meteor.Om := lambda_sun
+ else meteor.Om := Pi + lambda_sun;
+ meteor.Om := toTwoPiInterval(meteor.Om);
+
+ { 5) v }
+ meteor.v := arctan2(p_Meth*cos(meteor.i)*cotan(lambda_h - lambda_sun),p_Meth - R_Earth);
+ meteor.v := toTwoPiInterval(meteor.v);
+
+ { 6) w }
+ if betta_h > 0 then
+    meteor.w := Pi - meteor.v
+ else meteor.w := 2*Pi - meteor.v;
+ meteor.w := toTwoPiInterval(meteor.w);
+
+ result := meteor;
+end;
+
+{===========================================================================}
+
+function rotateSCX(angle: extended; dc: DecartCoords): DecartCoords;
+var  dec: DecartCoords;
+begin
+  with dc do begin
+    dec.X := X;
+    dec.Y := Y*cos(angle) - Z*sin(angle);
+    dec.Z := Y*sin(angle) + Z*cos(angle);
+
+    dec.Vx := Vx;
+    dec.Vy := Vy*cos(angle) - Vz*sin(angle);
+    dec.Vz := Vy*sin(angle) + Vz*cos(angle);
+  end;
+
+  result := dec;
+end;
+
+
+function rotateSCY(angle: extended; dc: DecartCoords): DecartCoords;
+var  dec: DecartCoords;
+begin
+  with dc do begin
+    dec.X := X*cos(angle) + Z*sin(angle);
+    dec.Y := Y;
+    dec.Z := -X*sin(angle) + Z*cos(angle);
+
+    dec.Vx := Vx*cos(angle) + Vz*sin(angle);
+    dec.Vy := Vy;
+    dec.Vz := -Vx*sin(angle) + Vz*cos(angle);
+  end;
+
+  result := dec;
+end;
+
+
+function rotateSCZ(angle: extended; dc: DecartCoords): DecartCoords;
+var  dec: DecartCoords;
+begin
+  with dc do begin
+    dec.X := X*cos(angle) - Y*sin(angle);
+    dec.Y := X*sin(angle) + Y*cos(angle);
+    dec.Z := Z;
+
+    dec.Vx := Vx*cos(angle) - Vy*sin(angle);
+    dec.Vy := Vx*sin(angle) + Vy*cos(angle);
+    dec.Vz := Vz;
+  end;
+
+  result := dec;
+end;
+
+
+procedure fromDecartToSphere(A: DecartCoords; var fi,lam: extended);
+begin
+  fi := arctan2(A.Y,A.X);
+  lam := arcsin(A.Z/moduleOfCoords(A));
+end;
+
+
+function fromSphereToDecart(fi,lam,r: extended): DecartCoords;
+var dc: DecartCoords;
+begin
+  dc.X := r*cos(fi)*cos(lam);
+  dc.Y := r*cos(fi)*sin(lam);
+  dc.Z := r*sin(fi);
+
+  result := dc;
+end;
+
+
+function sumOfVectors(A,B: DecartCoords): DecartCoords;
+var res: DecartCoords;
+begin
+  res.X := A.X + B.X;
+  res.Y := A.Y + B.Y;
+  res.Z := A.Z + B.Z;
+
+  res.Vx := A.Vx + B.Vx;
+  res.Vy := A.Vy + B.Vy;
+  res.Vz := A.Vz + B.Vz;
+
+  result := res;
+end;
+
+
+function differenceOfVectors(A,B: DecartCoords): DecartCoords;
+var res: DecartCoords;
+begin
+  res.X := A.X - B.X;
+  res.Y := A.Y - B.Y;
+  res.Z := A.Z - B.Z;
+
+  res.Vx := A.Vx - B.Vx;
+  res.Vy := A.Vy - B.Vy;
+  res.Vz := A.Vz - B.Vz;
+
+  result := res;
+end;
+
+
+function moduleOfCoords(A: DecartCoords): extended;
+begin
+  result := sqrt(sqr(A.X) + sqr(A.Y) + sqr(A.Z));
+end;
+
+
+function moduleOfVelocity(A: DecartCoords): extended;
+begin
+  result := sqrt(sqr(A.Vx) + sqr(A.Vy) + sqr(A.Vz));
+end;
+
+
+function timeToDotTime(t: DateTime): extended;
+begin
+  result := t.hour + t.minute/60 + t.second/3600;
+end;
+
+
+function dotTimeToTime(t: extended): DateTime;
+var time: DateTime;
+    hour,minute,second: extended;
+begin
+  hour := trunc(t);
+  minute := (t - hour)*60;
+  second := (minute - trunc(minute))*60;
+  minute := trunc(minute);
+
+  result := initDateTime(0,0,0,trunc(hour),trunc(minute),second);
+end;
+
+
+function toRadians(x: extended): extended;
+begin
+  result := x*RAD;
+end;
+
+
+function toDegree(x: extended): extended;
+begin
+  result := x/RAD;
+end;
+
+
+function toAu(x: extended): extended;
+begin
+  result := x/AU_KM;
+end;
+
+
+function toKm(x: extended): extended;
+begin
+  result := x*AU_KM;
+end;
+
+
+function toHour(x: extended): extended;
+begin
+  result := x/DEG_IN_HOUR;
+end;
+
+
+function toDegFromHour(x: extended): extended;
+begin
+  result := x*DEG_IN_HOUR;
+end;
+
+
+function toTwoPiInterval(angle: extended): extended;
+begin
+  if angle < 0 then begin
+    while angle < 0 do angle := angle + 2*PI;
+  end
+  else if angle > 2*PI then begin
+         while angle > 2*PI do angle := angle - 2*PI;
+       end;
+end;
+
+{==================================================================}
+function getEarthCoords(): DecartCoords;
+begin
+
+end;
+end.
