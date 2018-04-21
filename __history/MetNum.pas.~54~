@@ -384,7 +384,7 @@ function coordsToAu(coords: DecartCoords): DecartCoords;
 {+Перевод астрономических единиц в километры}
 function toKm(x: extended): extended;
 
-{+Перевод декартовых координат из астрономических единиц в километры
+{Перевод декартовых координат из астрономических единиц в километры
 ВНИМАНИЕ! Скорости переводятся из Au/сут. в км/сек.}
 function coordsToKm(coords: DecartCoords): DecartCoords;
 
@@ -1457,12 +1457,8 @@ begin
     Y := toKm(Y);
     Z := toKm(Z);
 
-    Vx := toKm(Vx)/86400;
-    Vy := toKm(Vy)/86400;
-    Vz := toKm(Vz)/86400;
-  end;
 
-  result := coords;
+  end;
 end;
 
 

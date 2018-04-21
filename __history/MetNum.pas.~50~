@@ -377,14 +377,14 @@ function toDegree(gCoords: GeogrCoords): GeogrCoords; overload;
 {+Перевод километров в астрономические единицы}
 function toAu(x: extended): extended;
 
-{+Перевод декартовых координат из километров в астрономические единицы
+{Перевод декартовых координат из километров в астрономические единицы
 ВНИМАНИЕ! Скорости переводятся из км/сек в Au/сут.}
 function coordsToAu(coords: DecartCoords): DecartCoords;
 
 {+Перевод астрономических единиц в километры}
 function toKm(x: extended): extended;
 
-{+Перевод декартовых координат из астрономических единиц в километры
+{Перевод декартовых координат из астрономических единиц в километры
 ВНИМАНИЕ! Скорости переводятся из Au/сут. в км/сек.}
 function coordsToKm(coords: DecartCoords): DecartCoords;
 
@@ -1439,30 +1439,12 @@ begin
     Vy := toAu(Vy)*86400;
     Vz := toAu(Vz)*86400;
   end;
-
-  result := coords;
 end;
 
 
 function toKm(x: extended): extended;
 begin
   result := x*AU_KM;
-end;
-
-
-function coordsToKm(coords: DecartCoords): DecartCoords;
-begin
-  with coords do begin
-    X := toKm(X);
-    Y := toKm(Y);
-    Z := toKm(Z);
-
-    Vx := toKm(Vx)/86400;
-    Vy := toKm(Vy)/86400;
-    Vz := toKm(Vz)/86400;
-  end;
-
-  result := coords;
 end;
 
 
