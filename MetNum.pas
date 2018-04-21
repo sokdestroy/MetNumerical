@@ -110,36 +110,46 @@ procedure inputCMet(filename: String; var met: DecartCoords; var time: DateTime)
 Test: +}
 procedure inputCMet(filename: String; var met: DecartCoords); overload;
 
-{+Ввод элементов орбиты метеора, времени наблюдения и экваториальных координат}
+{+Ввод элементов орбиты метеора, времени наблюдения и экваториальных координат
+Test: +}
 procedure inputEMet(filename: String; var met: ElementsOfOrbit; var time: DateTime;
           var eqCords: EquatorCoords); overload;
 
-{+Ввод элементов орбиты метеора и времени его наблюдения}
+{+Ввод элементов орбиты метеора и времени его наблюдения
+Test: +}
 procedure inputEMet(filename: String; var met: ElementsOfOrbit; var time: DateTime); overload;
 
-{+Ввод только элементов орбиты  метеора}
+{+Ввод только элементов орбиты  метеора
+Test: +}
 procedure inputEMet(filename: String; var met: ElementsOfOrbit); overload;
 
 {+Инициализация даты и времени для дальнейшего использования в
-программе}
+программе
+Test: +}
 function initDateTime(day,month,year,hour,minute: integer; second: extended): DateTime;
 
-{+Инициализация элементов орбиты метеора}
+{+Инициализация элементов орбиты метеора
+Test: +}
 function initElems(a,e,i,Om,w,v: extended): ElementsOfOrbit;
 
-{+Инициализация декартовых координат метеора}
+{+Инициализация декартовых координат метеора
+Test: +}
 function initDecartCoords(X,Y,Z,Vx,Vy,Vz: extended): DecartCoords;
 
-{+Инициализация экваториальных координат}
+{+Инициализация экваториальных координат
+Test: +}
 function initEquatorCoords(alpha,delta: extended): EquatorCoords;
 
-{+Инициализация эклиптических координат}
+{+Инициализация эклиптических координат
+Test: +}
 function initEclipticCoords(lamda,betta: extended): EclipticCoords;
 
-{+Инициализация горизонтальных координат}
+{+Инициализация горизонтальных координат
+Test: +}
 function initHorizontalCoords(Az,h: extended): HorizontalCoords;
 
-{+Инициализация георграфических координат}
+{+Инициализация георграфических координат
+Test: +}
 function initGeogrCoords(long,lat: extended): GeogrCoords;
 
 {Вывод времени в файл
@@ -174,31 +184,45 @@ procedure printCoordsVel(coords: DecartCoords; var fileName: text); overload;
 Test: +}
 procedure printCoordsVel(coords: DecartCoords); overload;
 
-{+Выводит в файл элементы орбиты}
+{+Выводит в файл элементы орбиты
+Test: +}
 procedure printElements(elem: ElementsOfOrbit; var fileName: text); overload;
 
-{+Выводит на экран элементы орбиты}
+{+Выводит на экран элементы орбиты
+Test: +}
 procedure printElements(elem: ElementsOfOrbit); overload;
 
 {+Вывод в файл небесных координат (конкретно, экваториальных)
 Test: +}
 procedure printCelCoords(coords: EquatorCoords; var fileName: text); overload;
 
-{+Вывод в файл небесных координат (конкретно, горизонтальных)}
+{+Вывод в файл небесных координат (конкретно, горизонтальных)
+Test: +}
 procedure printCelCoords(coords: HorizontalCoords; var fileName: text); overload;
 
-{+Вывод в файл небесных координат (конкретно, эклиптических)}
+{+Вывод в файл небесных координат (конкретно, эклиптических)
+Test: +}
 procedure printCelCoords(coords: EclipticCoords; var fileName: text); overload;
+
+{+Вывод в файл географических координат
+Test: +}
+procedure printCelCoords(coords: GeogrCoords; var filename: text); overload;
 
 {+Вывод на экран небесных координат (конкретно, экваториальных)
 Test: +}
 procedure printCelCoords(coords: EquatorCoords); overload;
 
-{+Вывод на экран небесных координат (конкретно, горизонтальных)}
+{+Вывод на экран небесных координат (конкретно, горизонтальных)
+Test: +}
 procedure printCelCoords(coords: HorizontalCoords); overload;
 
-{+Вывод на экран небесных координат (конкретно, эклиптических)}
+{+Вывод на экран небесных координат (конкретно, эклиптических)
+Test: +}
 procedure printCelCoords(coords: EclipticCoords); overload;
+
+{+Вывод на экран географических координат
+Test: +}
+procedure printCelCoords(coords: GeogrCoords); overload;
 
 
 {================================================================
@@ -570,8 +594,8 @@ begin
   el.e := e;
   el.i := i;
   el.Om := Om;
-  el.a := w;
-  el.a := v;
+  el.w := w;
+  el.v := v;
 
   result := el;
 end;
@@ -634,7 +658,7 @@ end;
 procedure printDateTime(t: DateTime; var fileName: text);  overload;
 begin
   with t do begin
-    Writeln(fileName, day,'.',month,'.',year,', ',hour,':',minute,':',second:7:3);
+    Writeln(fileName, day,'.',month,'.',year,', ',hour,':',minute,':',second:5:3);
   end;
 end;
 
@@ -642,7 +666,7 @@ end;
 procedure printDateTime(t: DateTime); overload;
 begin
   with t do begin
-    Writeln(day,'.',month,'.',year,' ',hour,':',minute,':',second:7:3);
+    Writeln(day,'.',month,'.',year,' ',hour,':',minute,':',second:5:3);
   end;
 end;
 
@@ -719,6 +743,12 @@ begin
 end;
 
 
+procedure printCelCoords(coords: GeogrCoords; var filename: text); overload;
+begin
+  Writeln(fileName,coords.long,' ',coords.lat);
+end;
+
+
 procedure printCelCoords(coords: EquatorCoords); overload;
 begin
   Writeln(coords.alpha,' ',coords.delta);
@@ -734,6 +764,12 @@ end;
 procedure printCelCoords(coords: EclipticCoords); overload;
 begin
   Writeln(coords.lamda,' ',coords.betta);
+end;
+
+
+procedure printCelCoords(coords: GeogrCoords); overload;
+begin
+  Writeln(coords.long,' ',coords.lat);
 end;
 {=============================================================================}
 
