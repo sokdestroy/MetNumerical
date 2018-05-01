@@ -3,7 +3,7 @@ unit MetNum;
 interface
 
 uses
-  Math;
+  Math,readf0nd;
 
 const
   {Скорость вращения Земли (рад/с)}
@@ -34,7 +34,7 @@ const
   DEG_IN_HOUR = 15;
 
 type
-  {Элементы орбиты метеороида: a,e,i,Om,w,v}
+  {fЭлементы орбиты метеороида: a,e,i,Om,w,v}
   ElementsOfOrbit = record
     a,e,i,Om,w,v: extended;
   end;
@@ -236,62 +236,80 @@ procedure printCelCoords(coords: GeogrCoords); overload;
 процедурами, связанными с временем.
 ==================================================================}
 
-{+Функция перехода от элементов орбиты к декартовым координатам}
+{+Функция перехода от элементов орбиты к декартовым координатам
+Test: +}
 function fromOrbitToDecart(elems: ElementsOfOrbit): DecartCoords;
 
-{+Функция перехода от декартовых координат к элементам орбиты}
+{+Функция перехода от декартовых координат к элементам орбиты
+Test: +}
 function fromDecartToOrbit(coord: DecartCoords): ElementsOfOrbit;
 
-{+Перевод григорианской даты к юлианской}
+{+Перевод григорианской даты к юлианской
+Test: +}
 function JDate(dt: DateTime): extended;
 
-{+Звездное время на полночь введенной даты}
+{+Гринвичское звездное время на полночь введенной даты
+Test: +}
 function siderealTime(year,month,day: integer): extended;
 
-{+Решает уравнение Кеплера методом Ньютона}
+{+Решает уравнение Кеплера методом Ньютона
+Test: +}
 function keplerSolution(e,M: extended): extended;
 
-{+Возвращает уравнение Кеплера}
+{+Возвращает уравнение Кеплера
+Test: +}
 function keplerEq(x,e,M: extended): extended;
 
-{+Возвращает производную уравнения Кеплера}
+{+Возвращает производную уравнения Кеплера
+Test: +}
 function keplerDifEq(x,e: extended): extended;
 
-{+Получаем среднюю аномалию}
+{+Получаем среднюю аномалию
+Test: +}
 function getM(t,t0,M0,a: extended): extended;
 
-{+Получаем среднее движение}
+{+Получаем среднее движение
+Test: +}
 function getN(a: extended): extended;
 
-{+Перевод юлианской даты к григорианской}
+{+Перевод юлианской даты к григорианской
+Test: +}
 function grDate(JD: extended): DateTime;
 
-{+Звездное время на даную дату на данной долготе}
+{+Звездное время на даную дату на данной долготе
+Test: +}
 function sidTimeOnLong(date: DateTime; long: extended): extended;
 
-{+Переход от экваториальных координат к эклиптическим (случай сферы)}
+{+Переход от экваториальных координат к эклиптическим (случай сферы)
+Test: +}
 function fromEqToEcl(eq: EquatorCoords): EclipticCoords;
 
-{+Переход от эклиптических координат к экваториальным (случай сферы)}
+{+Переход от эклиптических координат к экваториальным (случай сферы)
+Test: +}
 function fromEclToEq(ecl: EclipticCoords): EquatorCoords;
 
-{+Переход от горизонтальных координат к экваториальным (случай сферы)}
+{+Переход от горизонтальных координат к экваториальным (случай сферы)
+Test: +}
 function fromHorToEq(hor: HorizontalCoords; fi,sidTime: extended): EquatorCoords;
 
-{+Переход от экваториальных координат к горизонтальным (случай сферы)}
+{+Переход от экваториальных координат к горизонтальным (случай сферы)
+Test: +}
 function fromEqToHor(eq: EquatorCoords; fi,sidTime: extended): HorizontalCoords;
 
-{+Переход от экваториальных координат к эклиптичекским (декартов случай)}
+{+Переход от экваториальных координат к эклиптичекским (декартов случай)
+Test: +}
 function fromEqToEclDecart(eq: DecartCoords): DecartCoords;
 
-{+Переход от эклиптических координат к экваториальным (декартов случай)}
+{+Переход от эклиптических координат к экваториальным (декартов случай)
+Test: +}
 function fromEclToEqDecart(ecl: DecartCoords): DecartCoords;
 
-{+Возвращает радиант метеора}
+{+Возвращает радиант метеора
+Test: +}
 function getRadiant(met: DecartCoords): EquatorCoords;
 
 {Рассчет элементов орбиты по методу, предложеному Дубяго}
-function numElemsWithDubyago(alpha,delta,Vel: extended; Earth: DecartCoords): ElementsOfOrbit;
+function numElemsWithDubyago(eq: EquatorCoords; Vel: extended; Earth: DecartCoords): ElementsOfOrbit;
 
 
 {=====================================================================
@@ -304,97 +322,127 @@ function numElemsWithDubyago(alpha,delta,Vel: extended; Earth: DecartCoords): El
 модули векторов, перевод одних единиц в другие.
 ======================================================================}
 
-{+Поворот системы координат вокруг оси Х на угол angle (в радианах)}
+{+Поворот системы координат вокруг оси Х на угол angle (в радианах)
+Test: +}
 function rotateSCX(angle: extended; dc: DecartCoords): DecartCoords;
 
-{+Поворот системы координат вокруг оси Y на угол angle (в радианах)}
+{+Поворот системы координат вокруг оси Y на угол angle (в радианах)
+Test: +}
 function rotateSCY(angle: extended; dc: DecartCoords): DecartCoords;
 
-{+Поворот системы координат вокруг оси Z на угол angle (в радианах)}
+{+Поворот системы координат вокруг оси Z на угол angle (в радианах)
+Test: +}
 function rotateSCZ(angle: extended; dc: DecartCoords): DecartCoords;
 
-{+Переход от декартовых координат к сферическим}
+{+Переход от декартовых координат к сферическим
+Test: +}
 procedure fromDecartToSphere(A: DecartCoords; var fi,lam: extended);
 
-{+Переход от сферы к декартовым координатам}
+{+Переход от сферы к декартовым координатам
+Test: +}
 function fromSphereToDecart(fi,lam,r: extended): DecartCoords;
 
-{+Сумма двух векторов (и координат, и скоростей)}
+{+Сумма двух векторов (и координат, и скоростей)
+Test: +}
 function sumOfVectors(A,B: DecartCoords): DecartCoords;
 
-{+Разность двух векторов (и координат, и скоростей)}
+{+Разность двух векторов (и координат, и скоростей)
+Test: +}
 function differenceOfVectors(A,B: DecartCoords): DecartCoords;
 
-{+Модуль вектора положения (части, отвечающей за координаты)}
+{+Модуль вектора положения (части, отвечающей за координаты)
+Test: +}
 function moduleOfCoords(A: DecartCoords): extended;
 
-{+Модуль вектора скорости (части, отвечающей за скорость)}
+{+Модуль вектора скорости (части, отвечающей за скорость)
+Test: +}
 function moduleOfVelocity(A: DecartCoords): extended;
 
-{+Переход к представлению времени в виде десятичной дроби (в часах)}
+{+Переход к представлению времени в виде десятичной дроби (в часах)
+Test: +}
 function timeToDotTime(t: DateTime): extended;
 
 {+Переход к дискретному представлению времени (часы, минуты, секунды) от
-вида двесятичной дроби (поля отвечающие за дату равны НУЛЮ)}
+вида двесятичной дроби (поля отвечающие за дату равны НУЛЮ)
+Test: +}
 function dotTimeToTime(t: extended): DateTime;
 
-{+Перевод градусов в радианы}
+{+Перевод градусов в радианы
+Test: +}
 function toRadians(x: extended): extended; overload;
 
-{+Перевод угловых величин элементов орбиты из градусов в радианы}
+{+Перевод угловых величин элементов орбиты из градусов в радианы
+Test: +}
 function toRadians(elems: ElementsOfOrbit): ElementsOfOrbit; overload;
 
-{+Перевод экваториальных координат из градусов в радианы}
+{+Перевод экваториальных координат из градусов в радианы
+Test: +}
 function toRadians(eq: EquatorCoords): EquatorCoords; overload;
 
-{+Перевод эклиптических координат из градусов в радианы}
+{+Перевод эклиптических координат из градусов в радианы
+Test: +}
 function toRadians(ecl: EclipticCoords): EclipticCoords; overload;
 
-{+Перевод горизонтальных координат из градусов в радианы}
+{+Перевод горизонтальных координат из градусов в радианы
+Test: +}
 function toRadians(hor: HorizontalCoords): HorizontalCoords; overload;
 
-{+Перевод географических координат из градусов в радианы}
+{+Перевод географических координат из градусов в радианы
+Test: +}
 function toRadians(gCoords: GeogrCoords): GeogrCoords; overload;
 
-{+Перевод радиан в градусы}
+{+Перевод радиан в градусы
+Test: +}
 function toDegree(x: extended): extended; overload;
 
-{+Перевод угловых величин элементов орбиты из радиан в градусы}
+{+Перевод угловых величин элементов орбиты из радиан в градусы
+Test: +}
 function toDegree(elems: ElementsOfOrbit): ElementsOfOrbit; overload;
 
-{+Перевод экваториальных координат из радиан в градусы}
+{+Перевод экваториальных координат из радиан в градусы
+Test: +}
 function toDegree(eq: EquatorCoords): EquatorCoords; overload;
 
-{+Перевод эклиптических координат из радиан в градусы}
+{+Перевод эклиптических координат из радиан в градусы
+Test: +}
 function toDegree(ecl: EclipticCoords): EclipticCoords; overload;
 
-{+Перевод горизонтальных координат из радиан в градусы}
+{+Перевод горизонтальных координат из радиан в градусы
+Test: +}
 function toDegree(hor: HorizontalCoords): HorizontalCoords; overload;
 
-{+Перевод географических координат из радиан в градусы}
+{+Перевод географических координат из радиан в градусы
+Test: +}
 function toDegree(gCoords: GeogrCoords): GeogrCoords; overload;
 
-{+Перевод километров в астрономические единицы}
+{+Перевод километров в астрономические единицы
+Test: +}
 function toAu(x: extended): extended;
 
 {+Перевод декартовых координат из километров в астрономические единицы
-ВНИМАНИЕ! Скорости переводятся из км/сек в Au/сут.}
+ВНИМАНИЕ! Скорости переводятся из км/сек в Au/сут.
+Test: +}
 function coordsToAu(coords: DecartCoords): DecartCoords;
 
-{+Перевод астрономических единиц в километры}
+{+Перевод астрономических единиц в километры
+Test: +}
 function toKm(x: extended): extended;
 
 {+Перевод декартовых координат из астрономических единиц в километры
-ВНИМАНИЕ! Скорости переводятся из Au/сут. в км/сек.}
+ВНИМАНИЕ! Скорости переводятся из Au/сут. в км/сек.
+Test: +}
 function coordsToKm(coords: DecartCoords): DecartCoords;
 
-{+Перевод градусов в часы}
+{+Перевод градусов в часы
+Test: +}
 function toHour(x: extended): extended;
 
-{+Перевод часов в градусы}
+{+Перевод часов в градусы
+Test: +}
 function toDegFromHour(x: extended): extended;
 
-{Перевод угла к интервалу [0,2*PI]}
+{Перевод угла к интервалу [0,2*PI]
+Test: +}
 function toTwoPiInterval(angle: extended): extended;
 
 {=====================================================================
@@ -408,8 +456,9 @@ function toTwoPiInterval(angle: extended): extended;
    сторонних библиотек будет дополняться.
 ======================================================================}
 
-{Получаем координаты Земли из 430 фонда больших планет}
-function getEarthCoords(): DecartCoords;
+{Получаем координаты Земли из 406 фонда больших планет
+Test: +}
+function getEarthCoords(JD: extended): DecartCoords;
 
 {=====================================================================
     Конец блока процедур и функций, работающих со внешними данными
@@ -897,6 +946,8 @@ begin
    if elems.Om < 0 then elems.Om := elems.Om + 2*Pi;
    if elems.v < 0 then elems.v := elems.v + 2*Pi;
 
+   result := elems;
+
 end; {fromDecartToORbit}
 
 
@@ -997,18 +1048,18 @@ var a,b,c,d,e,m,JDN: integer;
  second := (minute - trunc(minute))*60;
  hour := trunc(hour);
  minute := trunc(minute);
- if second >= 59.999 then begin
-   second := 0;
+ if second >= 60 then begin
+   second := second - 60;
    minute := minute + 1;
  end;
 
- if minute >= 59.999 then begin
-   minute := 0;
+ if minute >= 60 then begin
+   minute := minute - 60;
    hour := hour + 1;
  end;
 
- if hour >= 23.999 then begin
-   hour := 0;
+ if hour >= 24 then begin
+   hour := hour - 24;
    day := day + 1;
  end;
 
@@ -1090,13 +1141,13 @@ begin
 
 function fromEqToEclDecart(eq: DecartCoords): DecartCoords;
 begin
-  result := rotateSCX(ECL_EQ,eq);
+  result := rotateSCX(-ECL_EQ,eq);
 end;
 
 
 function fromEclToEqDecart(ecl: DecartCoords): DecartCoords;
 begin
-  result := rotateSCX(-ECL_EQ,ecl);
+  result := rotateSCX(ECL_EQ,ecl);
 end;
 
 
@@ -1110,7 +1161,7 @@ begin
 end;
 
 
-function numElemsWithDubyago(alpha,delta,Vel: extended; Earth: DecartCoords): ElementsOfOrbit;
+function numElemsWithDubyago(eq: EquatorCoords; Vel: extended; Earth: DecartCoords): ElementsOfOrbit;
 var lambda_g,betta_g,lambda_a,Eg,gamma,Vh,Eh: extended;
     lambda_h,betta_h,R_Earth,p_Meth,lambda_sun: extended;
     V_Earth: extended;
@@ -1118,10 +1169,10 @@ var lambda_g,betta_g,lambda_a,Eg,gamma,Vh,Eh: extended;
 begin
  V_Earth := moduleOfVelocity(Earth);
  R_Earth := moduleOfCoords(Earth);
-
- lambda_g := arctan2(sin(eps)*sin(delta) + cos(eps)*cos(delta)*sin(alpha),
+ with eq do begin
+ lambda_g := arctan2(sin(ECL_EQ)*sin(delta) + cos(ECL_EQ)*cos(delta)*sin(alpha),
              cos(delta)*cos(alpha));
- betta_g := arcsin(cos(eps)*sin(delta) - sin(eps)*cos(delta)*sin(alpha));
+ betta_g := arcsin(cos(ECL_EQ)*sin(delta) - sin(ECL_EQ)*cos(delta)*sin(alpha));
  lambda_a := arctan2(Earth.Vy,Earth.Vx);
  Eg := arccos(cos(betta_g)*cos(lambda_g - lambda_a));
  gamma := arctan2(tan(betta_g),sin(lambda_g - lambda_a));
@@ -1160,7 +1211,7 @@ begin
     meteor.w := Pi - meteor.v
  else meteor.w := 2*Pi - meteor.v;
  meteor.w := toTwoPiInterval(meteor.w);
-
+ end;
  result := meteor;
 end;
 
@@ -1219,8 +1270,8 @@ end;
 
 procedure fromDecartToSphere(A: DecartCoords; var fi,lam: extended);
 begin
-  fi := arctan2(A.Y,A.X);
-  lam := arcsin(A.Z/moduleOfCoords(A));
+  lam := arctan2(A.Y,A.X);
+  fi := arcsin(A.Z/moduleOfCoords(A));
 end;
 
 
@@ -1230,6 +1281,10 @@ begin
   dc.X := r*cos(fi)*cos(lam);
   dc.Y := r*cos(fi)*sin(lam);
   dc.Z := r*sin(fi);
+
+  dc.Vx := 0;
+  dc.Vy := 0;
+  dc.Vz := 0;
 
   result := dc;
 end;
@@ -1486,11 +1541,14 @@ begin
   else if angle > 2*PI then begin
          while angle > 2*PI do angle := angle - 2*PI;
        end;
+  result := angle;
 end;
 
 {==================================================================}
-function getEarthCoords(): DecartCoords;
+function getEarthCoords(JD: extended): DecartCoords;
+var X: masc;
 begin
-
+  read406(false,JD,X);
+  result := initDecartCoords(X[13],X[14],X[15],X[16],X[17],X[18]);
 end;
 end.
